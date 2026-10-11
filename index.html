@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>辣巷子 V18｜測試版</title>
+<style>
+:root{--red:#a71920;--gold:#d9b45b;--ink:#262321;--paper:#fffaf1;--muted:#746e65;--line:#eadfce}
+*{box-sizing:border-box}body{margin:0;background:#f5eee3;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif}
+header{background:var(--red);color:white;padding:18px 16px;text-align:center;border-bottom:4px solid var(--gold)}
+header h1{margin:0;font-size:25px;letter-spacing:2px}header p{margin:5px 0 0;color:#ffe8ac;font-size:12px}
+main{max-width:1050px;margin:auto;padding:16px}.notice{background:#fff4d7;border:1px solid #e6ca7c;padding:12px;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:16px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button,.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer;background:var(--red);color:white}.tabs button.secondary,.btn.secondary{background:#e9dfd0;color:#352f28}.tabs button.active{outline:3px solid #e5c66d}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 3px 12px #4b2a0b0a}
+h2{font-size:19px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px}.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.item{border:1px solid var(--line);border-radius:12px;padding:13px;background:var(--paper)}.item h3{margin:0 0 7px;font-size:17px}.price{color:var(--red);font-size:20px;font-weight:800}.qty{display:flex;align-items:center;gap:12px;margin-top:10px}.qty button{width:34px;height:34px;border:0;border-radius:9px;background:#eadcc8;font-size:20px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input,.row select{padding:10px;border:1px solid var(--line);border-radius:9px;font:inherit}
+.orderline{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.hidden{display:none!important}.pill{display:inline-block;border-radius:99px;padding:4px 9px;background:#f2e4cc;font-size:12px}
+.orders{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}.ordercard{border:1px solid var(--line);border-radius:12px;padding:13px}.ordercard h3{margin:0 0 6px}.ordercard .num{font-size:27px;font-weight:900;color:var(--red)}.ordercard p{margin:6px 0;font-size:13px;line-height:1.5}
+.status-pending{color:#9b5900}.status-done{color:#267447}.pager{display:flex;flex-wrap:wrap;gap:8px}.pager span{padding:8px 10px;border-radius:8px;background:#f2e8d9;font-weight:700}.pager .busy{background:#f6d2cd;color:#8b1b1b}.pager .free{background:#d9efdc;color:#206a37}
+footer{text-align:center;color:#81776b;font-size:12px;padding:20px}
+@media(max-width:600px){main{padding:10px}.tabs button{flex:1;padding:10px 5px}header h1{font-size:22px}}
+</style>
+</head>
+<body>
+<header><h1>辣巷子重慶小麵</h1><p>巷子不大，辣得剛好｜V18 獨立測試版</p></header>
+<main>
+<div class="notice"><b>⚠️ 測試版，不會送出真實訂單</b><br>目前資料只存在這個瀏覽器頁面，重新整理可能清空。請先測試畫面、取號、來單聲音和取餐器流程；此版本尚未連接正式資料庫，也不會影響 V17。</div>
+<div class="tabs"><button id="customerTab" class="active" onclick="showTab('customer')">客人點餐測試</button><button id="adminTab" class="secondary" onclick="showTab('admin')">管理後台測試</button></div>
+<section id="customer">
+<div class="panel"><h2>選擇餐點</h2><div id="menu" class="menu"></div></div>
+<div class="panel"><h2>您的訂單</h2><div id="cart"><p class="muted">請先選擇餐點。</p></div><div class="row" style="margin-top:12px"><input id="customerName" placeholder="稱呼（選填）" maxlength="20"><button class="btn" onclick="placeOrder()">送出測試訂單</button></div><p class="muted">測試取餐號碼 01–20 循環；號碼在「取餐器已歸還」前不會重複使用。</p></div>
+</section>
+<section id="admin" class="hidden">
+<div class="panel"><h2>來單提醒</h2><div class="row"><button class="btn" id="soundBtn" onclick="enableSound()">🔔 啟用來單聲音</button><button class="btn secondary" onclick="testSound()">測試聲音</button><button class="btn secondary" onclick="toggleVibration()">震動：<span id="vibLabel">開</span></button></div><p class="muted">第一次請先按「啟用來單聲音」。有新測試訂單時會響鈴一次；不會每次更新都重複響。</p><p id="soundState" class="muted">聲音尚未啟用</p></div>
+<div class="panel"><h2>取餐器狀態（01–20）</h2><p class="muted">紅色＝使用中；綠色＝可使用。完成取餐不會自動釋放號碼，需確認取餐器歸還後按鈕釋放。</p><div id="pagerList" class="pager"></div></div>
+<div class="panel"><div class="row" style="justify-content:space-between"><h2 style="margin:0">測試訂單</h2><button class="btn secondary" onclick="clearDemo()">清空測試資料</button></div><p class="muted">此清空只清除本頁測試訂單和取餐器狀態。</p><div id="orders" class="orders"></div></div>
+</section>
+</main><footer>辣巷子 V18 測試版｜獨立測試，不連接正式訂單資料庫</footer>
+<script>
+const dishes=[{id:1,name:"重慶小麵",price:100},{id:2,name:"肉片溏心蛋小麵",price:130},{id:3,name:"豌雜麵",price:130},{id:4,name:"肥腸麵",price:160},{id:5,name:"紅油涼皮",price:90},{id:6,name:"紅糖糍粑",price:65}];
+let cart={},orders=[],pager={};for(let i=1;i<=20;i++)pager[i]=null;
+// 測試資料只存於這個瀏覽器，不會送到伺服器或正式資料庫。
+try{const saved=JSON.parse(localStorage.getItem('lazixiang_v18_demo')||'null');if(saved&&Array.isArray(saved.orders)&&saved.pager){orders=saved.orders;pager=saved.pager;for(let i=1;i<=20;i++)if(!(i in pager))pager[i]=null}}catch(e){}
+function saveDemo(){try{localStorage.setItem('lazixiang_v18_demo',JSON.stringify({orders,pager}))}catch(e){}}
+let soundEnabled=false,vibration=true,audioCtx=null,lastSeen=new Set();
+function showTab(tab){document.getElementById('customer').classList.toggle('hidden',tab!=='customer');document.getElementById('admin').classList.toggle('hidden',tab!=='admin');document.getElementById('customerTab').className=tab==='customer'?'active':'secondary';document.getElementById('adminTab').className=tab==='admin'?'active':'secondary';}
+function renderMenu(){document.getElementById('menu').innerHTML=dishes.map(d=>`<div class="item"><h3>${d.name}</h3><div class="price">$${d.price}</div><div class="qty"><button onclick="changeQty(${d.id},-1)">−</button><b>${cart[d.id]||0}</b><button onclick="changeQty(${d.id},1)">＋</button></div></div>`).join('');renderCart()}
+function changeQty(id,n){cart[id]=Math.max(0,(cart[id]||0)+n);renderMenu()}
+function renderCart(){let entries=dishes.filter(d=>cart[d.id]);let total=entries.reduce((s,d)=>s+d.price*cart[d.id],0);document.getElementById('cart').innerHTML=entries.length?entries.map(d=>`<div class="orderline"><span>${d.name} × ${cart[d.id]}</span><b>$${d.price*cart[d.id]}</b></div>`).join('')+`<p style="text-align:right;font-size:20px;font-weight:800">合計：$${total}</p>`:'<p class="muted">請先選擇餐點。</p>'}
+function placeOrder(){let entries=dishes.filter(d=>cart[d.id]);if(!entries.length){alert('請先選擇餐點');return}let num=null;for(let i=1;i<=20;i++)if(!pager[i]){num=i;break}if(num===null){alert('01–20 取餐器都在使用中，請先確認有取餐器歸還。');showTab('admin');return}let o={id:Date.now()+Math.floor(Math.random()*999),num,name:document.getElementById('customerName').value.trim(),items:entries.map(d=>({name:d.name,qty:cart[d.id],price:d.price})),total:entries.reduce((s,d)=>s+d.price*cart[d.id],0),status:'pending',time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})};orders.unshift(o);pager[num]=o.id;saveDemo();cart={};renderMenu();renderAdmin(true);alert('測試訂單已建立！取餐號碼：'+String(num).padStart(2,'0'));showTab('admin')}
+function renderAdmin(isNew=false){document.getElementById('orders').innerHTML=orders.length?orders.map(o=>`<div class="ordercard"><h3>取餐號碼 <span class="num">${String(o.num).padStart(2,'0')}</span></h3><span class="pill ${o.status==='done'?'status-done':'status-pending'}">${o.status==='pending'?'待製作':o.status==='done'?'已完成':'已取餐'}</span><p>${o.name||'未填稱呼'}｜${o.time}</p><p>${o.items.map(i=>`${i.name} × ${i.qty}`).join('<br>')}</p><p><b>合計 $${o.total}</b></p><div class="row">${o.status==='pending'?`<button class="btn" onclick="setStatus(${o.id},'done')">製作完成</button>`:''}${o.status!=='picked'?`<button class="btn secondary" onclick="setStatus(${o.id},'picked')">已取餐</button>`:''}<button class="btn secondary" onclick="releasePager(${o.num})">取餐器已歸還</button></div></div>`).join(''):'<p class="muted">目前沒有測試訂單。</p>';document.getElementById('pagerList').innerHTML=Array.from({length:20},(_,j)=>j+1).map(n=>`<span class="${pager[n]?'busy':'free'}">${String(n).padStart(2,'0')} ${pager[n]?'使用中':'可使用'}</span>`).join('');if(isNew){let o=orders[0];if(soundEnabled)ring();if(vibration&&navigator.vibrate)navigator.vibrate([180,100,180]);}}
+function setStatus(id,status){let o=orders.find(x=>x.id===id);if(o)o.status=status;saveDemo();renderAdmin()}
+function releasePager(n){let id=pager[n];if(!id){alert('這個取餐器已經是可使用狀態');return}let o=orders.find(x=>x.id===id);if(o&&o.status!=='picked'&&!confirm('這筆訂單尚未標記已取餐。確定取餐器已歸還並釋放號碼？'))return;pager[n]=null;saveDemo();renderAdmin();alert('取餐器 '+String(n).padStart(2,'0')+' 已釋放，可供下一筆訂單使用。')}
+function enableSound(){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();soundEnabled=true;document.getElementById('soundBtn').textContent='🔔 來單聲音已啟用';document.getElementById('soundState').textContent='聲音已啟用；新訂單會響鈴一次。';ring()}catch(e){document.getElementById('soundState').textContent='此瀏覽器無法啟用聲音，請確認手機/平板未靜音。'}}
+function ring(){if(!soundEnabled||!audioCtx)return;try{let now=audioCtx.currentTime;[0,.24,.48].forEach((t,i)=>{let osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sine';osc.frequency.value=i===1?1046:880;gain.gain.setValueAtTime(.001,now+t);gain.gain.exponentialRampToValueAtTime(.25,now+t+.025);gain.gain.exponentialRampToValueAtTime(.001,now+t+.17);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now+t);osc.stop(now+t+.19)})}catch(e){}}
+function testSound(){if(!soundEnabled){alert('請先按「啟用來單聲音」');return}ring()}
+function toggleVibration(){vibration=!vibration;document.getElementById('vibLabel').textContent=vibration?'開':'關'}
+function clearDemo(){if(!confirm('確定清空所有測試訂單？'))return;orders=[];for(let i=1;i<=20;i++)pager[i]=null;saveDemo();renderAdmin()}
+renderMenu();renderAdmin();
+// 每 5 秒重繪後台畫面；這是本機測試原型，尚未連接伺服器訂單。
+setInterval(()=>{if(!document.getElementById('admin').classList.contains('hidden'))renderAdmin()},5000);
+</script></body></html>
